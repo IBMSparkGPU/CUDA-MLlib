@@ -1,0 +1,31 @@
+This is a CUDA kernel which implements the LBFGS algorithm.
+It can be used stand-alone, or by Spark.  The JNI code to 
+integrate with Spark is under the spark subdirectory, and 
+changes to Spark itself to call the kernel are located in 
+Spark-MLlib: org/apache/spark/mllib/optimization/LBFGS.scala
+
+This code currently compiles and runs, executing the GPU 
+code by copying all data to the driver and executing 
+the LBFGS algorithm there.
+
+To test and verify, perform the following steps:
+
+1) Build this library by typing "make" in this directory.
+
+2) Build spark from the Spark-MLlib repository.  An example command to do this is from the 
+Spark-MLlib folder is: 
+"./make-distribution.sh -Pyarn -Phadoop-2.6 -Dhadoop.version=2.6.3".  Refer to the
+Spark documentation here for more details: https://spark.apache.org/docs/latest/building-spark.html
+
+3) Set the configuration property "spark.mllib.LBFGS.useGPU=true", and specify the 
+argument "--driver-library-path=/path/to/CUDA-MLlib/lbfgs" when running spark-submit. 
+Setting "spark.mllib.LBFGS.useGPU=false" or not setting it at all will disable the GPU, and run stock 
+spark code.
+
+4) Run your program.  An example program that comes with spark and uses LBFGS is 
+"mllib.LBFGSExample".  Here's an example full command to run that program locally: 
+
+spark-submit -v --master local[*] --conf spark.mllib.LBFGS.useGPU=true 
+--driver-library-path=/path/to/CUDA-MLlib/lbfgs 
+--class org.apache.spark.examples.mllib.LBFGSExample 
+/path/to/Spark-MLlib/dist/lib/spark-examples-2.0.0-SNAPSHOT-hadoop2.6.3.jar

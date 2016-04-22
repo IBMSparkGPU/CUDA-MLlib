@@ -1,0 +1,33 @@
+#!/bin/bash
+
+clear
+
+grep -n -H " $"        *.[ch]
+if [ "$?" == "0" ]
+then
+  echo "WARNING: THESE LINES END ON <SPACE>."
+  echo
+fi
+
+grep -n -H "^)"        *.[ch]
+if [ "$?" == "0" ]
+then
+  echo "WARNING: THESE LINES START WITH \")\". POSSIBLY FORGOTTEN \"void\"."
+  echo
+fi
+
+grep -n -H ".\{81,\}$" *.[ch]
+if [ "$?" == "0" ]
+then
+  echo "WARNING: THESE LINES ARE LONGER THAN 80 CHARACTERS."
+  echo
+fi
+
+grep -n -H "//[^ ]"    *.[ch]
+if [ "$?" == "0" ]
+then
+  echo "WARNING: THESE LINES REQUIRE ATTENTION."                             
+  echo
+fi
+
+gcc -std=c99 -O2 lbfgs.c func_to_be_minimized_and_its_grad.c -o lbfgs -lm
