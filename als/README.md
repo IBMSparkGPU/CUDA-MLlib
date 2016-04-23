@@ -8,10 +8,9 @@ This folder contains:
 
 ## What is matrix factorization?
 
-Matrix factorization (MF) factors a sparse rating matrix $R$ ($m$ by $n$, with $N_z$ non-zero elements) into a $m$-by-$f$ and a $f$-by-$n$ matrices, as shown in Figure~\ref{fig:mf}.
-%$X$ and $\Theta^T$, i.e., $R\approx X \cdot \Theta^{T}$.
+Matrix factorization (MF) factors a sparse rating matrix R (m by n, with N_z non-zero elements) into a m-by-f and a f-by-n matrices, as shown below.
 
-![matrix factorization](https://github.com/wei-tan/CUDA-MLlib/tree/master/als/images/mf.png)
+![alt text](https://github.com/wei-tan/CUDA-MLlib/raw/master/als/images/mf.png "matrix factorization")
  
 Matrix factorization (MF) is at the core of many popular algorithms, e.g., [collaborative filtering](https://en.wikipedia.org/wiki/Collaborative_filtering), word embedding, and topic model. GPU (graphics processing units) with massive cores and high intra-chip memory bandwidth sheds light on accelerating MF much further when appropriately exploiting its architectural characteristics.
 
