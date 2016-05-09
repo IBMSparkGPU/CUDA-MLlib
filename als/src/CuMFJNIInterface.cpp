@@ -103,8 +103,9 @@ JNIEXPORT jobjectArray JNICALL Java_org_apache_spark_ml_recommendation_CuMFJNIIn
 		env->ReleasePrimitiveArrayCritical(csrCol, csrColIndexHostPtr, 0);
 		env->ReleasePrimitiveArrayCritical(csrVal, csrValHostPtr, 0);
 
+		#ifdef DEBUG 
 		printf("\tdoALSWithCSR with m=%d,n=%d,f=%d,nnz=%d,lambda=%f \n.", m, n, f, nnz, lambda);
-		
+		#endif
 		doALSWithCSR(cuda_stream, d_csrRowIndex, d_csrColIndex, d_csrVal, thetaTHost, XTHost, m, n, f, nnz, lambda, 1);
 		
 		jclass floatArrayClass =  env->FindClass("[F");
@@ -124,7 +125,7 @@ JNIEXPORT jobjectArray JNICALL Java_org_apache_spark_ml_recommendation_CuMFJNIIn
 		return output;
   }
   catch (thrust::system_error &e) {
-	  printf("CUDA error during some_function: %s", e.what());
+	  printf("CUDA error during some function: %s", e.what());
 	  }
  }
  

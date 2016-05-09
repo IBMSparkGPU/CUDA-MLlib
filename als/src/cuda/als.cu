@@ -1001,10 +1001,12 @@ void doALSWithCSR(cudaStream_t cuda_stream, int* csrRowIndex, int* csrColIndex, 
 		const int m, const int n, const int f, const long nnz, const float lambda,
 		const int X_BATCH)
 {
+	#ifdef DEBUG
 	double elapsed = 0.0;
 	struct timeval tv;
 	struct timeval start_tv;
 	gettimeofday(&start_tv, NULL);
+	#endif
 	//device pointers
 	float * thetaT = 0;
 	double * tt = 0;
@@ -1100,8 +1102,10 @@ void doALSWithCSR(cudaStream_t cuda_stream, int* csrRowIndex, int* csrColIndex, 
 	cudacall(cudaFree(thetaT));
 	cudacall(cudaFree(XT));
 	//cudacall(cudaDeviceReset());
+	#ifdef DEBUG
 	gettimeofday(&tv, NULL);
 	elapsed = (tv.tv_sec - start_tv.tv_sec) + (tv.tv_usec - start_tv.tv_usec) / 1000000.0;
 	printf("    doALSWithCSR() runs %.3f seconds, gridSize: %d, blockSize %d.\n", elapsed, m, f);
+	#endif
 
 }
