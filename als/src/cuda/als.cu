@@ -44,8 +44,8 @@ __global__ void doubleArray2floatArray(const double * doubleArray, float* floatA
 
 /* Form the hermitian matrices tt from R (csrRowIndex, csrColIndex)
  * For each row u in R, tt[u]= \sum\nolimits_{r_{uv} \neq 0}(theta_v dot theta_v^T)
- * Each block solves a row; each thread takes a 10*10 block from the F*F matrix
- * More detail can be found from http://learningsys.org/papers/LearningSys_2015_paper_3.pdf
+ * Each block deal with a row u; each thread takes a 10*10 sub-block from the F*F matrix tt[u]
+ * More detail can be found from http://arxiv.org/abs/1603.03820
  */
 __global__ void
 get_hermitianT10(const int batch_offset, double* tt,
@@ -469,8 +469,8 @@ get_hermitianT10(const int batch_offset, double* tt,
 
 /* Form the hermitian matrices tt from R (csrRowIndex, csrColIndex)
  * For each row u in R, tt[u]= \sum\nolimits_{r_{uv} \neq 0}(theta_v dot theta_v^T)
- * Each block solves a row; each thread takes a 10*10 block from the F*F matrix
- * More detail can be found from http://learningsys.org/papers/LearningSys_2015_paper_3.pdf
+ * Each block solves a row u; each thread takes a 10*10 sub-block from the F*F matrix tt[u]
+ * More detail can be found from http://arxiv.org/abs/1603.03820
  * This kernel is specifically optimized for F = 100
  */
 __global__ void
@@ -931,8 +931,8 @@ void loadCSRSparseMatrixBin(const char* dataFile, const char* rowFile, const cha
 }
 
 /* To solve many Ax = b;
- * As are the tt from the get_hermitianT10 kernel
- * Use LU decomposition from cublas to solve
+ * Many As are the tt[u]s from the get_hermitianT10 kernel
+ * Use batch LU decomposition from cublas to solve
  */
 int updateX(cudaStream_t cuda_stream, const int batch_size, const int batch_offset, float * ythetaT, double * tt, float * XT,
 		cublasHandle_t handle, const int m, const int n, const int f, const int nnz,
@@ -995,16 +995,18 @@ int updateX(cudaStream_t cuda_stream, const int batch_size, const int batch_offs
 }
 
 
-//from thetaT to X, do a half ALS iteration
+//from thetaT to X, or from X to thetaT, i.e., do a half ALS iteration
 void doALSWithCSR(cudaStream_t cuda_stream, int* csrRowIndex, int* csrColIndex, float* csrVal,
 		float* thetaTHost, float* XTHost,
 		const int m, const int n, const int f, const long nnz, const float lambda,
 		const int X_BATCH)
 {
+	#ifdef DEBUG
 	double elapsed = 0.0;
 	struct timeval tv;
 	struct timeval start_tv;
 	gettimeofday(&start_tv, NULL);
+	#endif
 	//device pointers
 	float * thetaT = 0;
 	double * tt = 0;
@@ -1100,8 +1102,10 @@ void doALSWithCSR(cudaStream_t cuda_stream, int* csrRowIndex, int* csrColIndex, 
 	cudacall(cudaFree(thetaT));
 	cudacall(cudaFree(XT));
 	//cudacall(cudaDeviceReset());
+	#ifdef DEBUG
 	gettimeofday(&tv, NULL);
 	elapsed = (tv.tv_sec - start_tv.tv_sec) + (tv.tv_usec - start_tv.tv_usec) / 1000000.0;
 	printf("    doALSWithCSR() runs %.3f seconds, gridSize: %d, blockSize %d.\n", elapsed, m, f);
+	#endif
 
 }
