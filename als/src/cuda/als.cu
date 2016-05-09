@@ -24,6 +24,8 @@
  *  Tested on cc 3.5, 3.7 and 5.2 platforms.
  */
 #include "als.h"
+#include "../../../utilities.h"
+
 //transform a float array to a double array
 __global__ void floatArray2doubleArray(const float * floatArray, double* doubleArray,
 		const int size) {
@@ -943,29 +945,29 @@ int updateX(cudaStream_t cuda_stream, const int batch_size, const int batch_offs
 	for (int k = 0; k < batch_size; k++) {
 		devPtrTTHost[k] = &tt[k * f * f];
 	}
-	cudacall(cudaMalloc((void** ) &devPtrTT, batch_size * sizeof(*devPtrTT)));
+	cudacall(mallocBest((void** ) &devPtrTT, batch_size * sizeof(*devPtrTT)));
 	cudacall(cudaMemcpyAsync(devPtrTT, devPtrTTHost, batch_size * sizeof(*devPtrTT),cudaMemcpyHostToDevice, cuda_stream));
-	cudacall( cudaMalloc(&INFO, batch_size * sizeof(int) ));
+	cudacall( mallocBest((void**)&INFO, batch_size * sizeof(int) ));
 	
 	cublasSetStream(handle, cuda_stream); 
 	//LU decomposition, without pivoting
 	cublascall(cublasDgetrfBatched(handle, f, devPtrTT, f, NULL, INFO, batch_size));
 	cudaStreamSynchronize(cuda_stream);
-	cudaCheckError();
+	//cudaCheckError();
 	//printf("*******solve: tt * XT = ythetaT use cublas, with CUDA 7.\n");
 
 	double * ythetaT_d;
-	cudacall(cudaMalloc((void** ) &ythetaT_d, batch_size * f* sizeof(double)));
+	cudacall(mallocBest((void** ) &ythetaT_d, batch_size * f* sizeof(double)));
 	floatArray2doubleArray<<<(batch_size*f-1)/1024 + 1, 1024, 0, cuda_stream>>>(&ythetaT[batch_offset*f],ythetaT_d, batch_size*f);
 	cudaStreamSynchronize(cuda_stream);
-	cudaCheckError();
+	//cudaCheckError();
 
 	double **devPtrYthetaT = 0;
 
 	for (int k = 0; k < batch_size; k++) {
 		devPtrYthetaTHost[k] = &ythetaT_d[k * f];
 	}
-	cudacall(cudaMalloc((void** ) &devPtrYthetaT, batch_size * sizeof(*devPtrYthetaT)));
+	cudacall(mallocBest((void** ) &devPtrYthetaT, batch_size * sizeof(*devPtrYthetaT)));
 	cudacall(cudaMemcpyAsync(devPtrYthetaT, devPtrYthetaTHost, batch_size * sizeof(*devPtrYthetaT), cudaMemcpyHostToDevice, cuda_stream));
 
 	int * info2 = (int *) malloc(sizeof(int));
@@ -974,22 +976,22 @@ int updateX(cudaStream_t cuda_stream, const int batch_size, const int batch_offs
 			(const double ** ) devPtrTT, f, NULL, devPtrYthetaT, f, info2, batch_size) );
 
 	cudaStreamSynchronize(cuda_stream);
-	cudaCheckError();
+	//cudaCheckError();
 
 	doubleArray2floatArray<<<(batch_size*f-1)/1024 + 1, 1024, 0, cuda_stream>>>(ythetaT_d, &ythetaT[batch_offset*f], batch_size*f);
 	cudaStreamSynchronize(cuda_stream);
-	cudaCheckError();
+	//cudaCheckError();
 
 
 	cudacall( cudaMemcpyAsync(&XT[batch_offset * f], &ythetaT[batch_offset * f],
 			batch_size * f * sizeof(float), cudaMemcpyDeviceToDevice, cuda_stream) );
 	cudaStreamSynchronize(cuda_stream);
-	cudaCheckError();
+	//cudaCheckError();
 
-	cudacall(cudaFree(devPtrTT));
-	cudacall(cudaFree(INFO));
-	cudacall(cudaFree(devPtrYthetaT));
-	cudacall(cudaFree(ythetaT_d));
+	cudacall(freeBest(devPtrTT));
+	cudacall(freeBest(INFO));
+	cudacall(freeBest(devPtrYthetaT));
+	cudacall(freeBest(ythetaT_d));
 	return 0;
 
 }
@@ -1012,9 +1014,9 @@ void doALSWithCSR(cudaStream_t cuda_stream, int* csrRowIndex, int* csrColIndex, 
 	double * tt = 0;
 	float * XT = 0;
 	//dimension: F*N
-	cudacall(cudaMalloc((void** ) &thetaT, f * n * sizeof(thetaT[0])));
+	cudacall(mallocBest((void** ) &thetaT, f * n * sizeof(thetaT[0])));
 	//dimension: M*F
-	cudacall(cudaMalloc((void** ) &XT, f * m * sizeof(XT[0])));
+	cudacall(mallocBest((void** ) &XT, f * m * sizeof(XT[0])));
 
 	//printf("*******start copying memory to GPU...\n");
 	cudacall(cudaMemcpyAsync(thetaT, thetaTHost, (size_t ) (n * f * sizeof(thetaT[0])), cudaMemcpyHostToDevice, cuda_stream));
@@ -1036,8 +1038,8 @@ void doALSWithCSR(cudaStream_t cuda_stream, int* csrRowIndex, int* csrColIndex, 
 	//printf("\tgenerate: Y*theta using cusparse.\n");
 	float * ytheta = 0;
 	float * ythetaT = 0;
-	cudacall(cudaMalloc((void** ) &ytheta, f * m * sizeof(ytheta[0])));
-	cudacall(cudaMalloc((void** ) &ythetaT, f * m * sizeof(ythetaT[0])));
+	cudacall(mallocBest((void** ) &ytheta, f * m * sizeof(ytheta[0])));
+	cudacall(mallocBest((void** ) &ythetaT, f * m * sizeof(ythetaT[0])));
 
 	const float alpha = 1.0f;
 	const float beta = 0.0f;
@@ -1051,9 +1053,10 @@ void doALSWithCSR(cudaStream_t cuda_stream, int* csrRowIndex, int* csrColIndex, 
 	cublascall(cublasSgeam(handle, CUBLAS_OP_T, CUBLAS_OP_N, f, m, &alpha,
 			(const float * ) ytheta, m, &beta, ythetaT, f, ythetaT, f));
 	cudaStreamSynchronize(cuda_stream);
-	cudaCheckError();
-	cudacall(cudaFree(ytheta));
-	cudacall(cudaFree(csrVal));
+	//cudaCheckError();
+	cudacall(freeBest(ytheta));
+	cudacall(freeBest(csrVal));
+	//cudaCheckError();
 
 	for(int batch_id = 0; batch_id< X_BATCH; batch_id ++){
 		//printf("*******batch %d / %d.*******\n", batch_id, X_BATCH);
@@ -1063,8 +1066,10 @@ void doALSWithCSR(cudaStream_t cuda_stream, int* csrRowIndex, int* csrColIndex, 
 		else
 			batch_size = m - batch_id*(m/X_BATCH);
 		int batch_offset = batch_id * (m/X_BATCH);
-		cudacall(cudaMalloc((void** ) &tt, f * f * batch_size * sizeof(double)));
-		
+		cudacall(mallocBest((void** ) &tt, f * f * batch_size * sizeof(double)));
+		cudaStreamSynchronize(cuda_stream);
+		//cudaCheckError();
+
 		int block_dim = f/T10*(f/T10+1)/2;
 		if (block_dim < f/2) block_dim = f/2;
 
@@ -1075,7 +1080,7 @@ void doALSWithCSR(cudaStream_t cuda_stream, int* csrRowIndex, int* csrColIndex, 
 			get_hermitianT10<<<batch_size, block_dim, SCAN_BATCH * f/2*sizeof(float2), cuda_stream>>>
 				(batch_offset, tt, csrRowIndex, csrColIndex, lambda, m, f, thetaT);
 		cudaStreamSynchronize(cuda_stream);
-		cudaCheckError();
+		//cudaCheckError();
 
 		double ** devPtrTTHost = 0;
 		cudacall(cudaMallocHost( (void** ) &devPtrTTHost, batch_size * sizeof(*devPtrTTHost) ) );
@@ -1086,26 +1091,25 @@ void doALSWithCSR(cudaStream_t cuda_stream, int* csrRowIndex, int* csrColIndex, 
 		updateX(cuda_stream, batch_size, batch_offset, ythetaT, tt, XT, handle, m, n, f, nnz,
 				devPtrTTHost, devPtrYthetaTHost);
 		cudaStreamSynchronize(cuda_stream);
-		cudaCheckError();
+		//cudaCheckError();
 		
 		//printf("\tupdateX run seconds: %f \n", seconds() - t0);
-		cudacall(cudaFree(tt));
+		cudacall(freeBest(tt));
 		cudacall(cudaFreeHost(devPtrTTHost));
 		cudacall(cudaFreeHost(devPtrYthetaTHost));
 	}
-	cudacall(cudaFree(csrRowIndex));
-	cudacall(cudaFree(csrColIndex));
-	cudacall(cudaFree(ythetaT));
+	cudacall(freeBest(csrRowIndex));
+	cudacall(freeBest(csrColIndex));
+	cudacall(freeBest(ythetaT));
 
 	//copy feature vectors back to host
 	cudacall(cudaMemcpy(XTHost, XT, (size_t ) (m * f * sizeof(XT[0])), cudaMemcpyDeviceToHost));
-	cudacall(cudaFree(thetaT));
-	cudacall(cudaFree(XT));
-	//cudacall(cudaDeviceReset());
+	cudacall(freeBest(thetaT));
+	cudacall(freeBest(XT));
+
 	#ifdef DEBUG
 	gettimeofday(&tv, NULL);
 	elapsed = (tv.tv_sec - start_tv.tv_sec) + (tv.tv_usec - start_tv.tv_usec) / 1000000.0;
 	printf("    doALSWithCSR() runs %.3f seconds, gridSize: %d, blockSize %d.\n", elapsed, m, f);
 	#endif
-
 }

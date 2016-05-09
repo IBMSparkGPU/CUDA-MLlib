@@ -90,9 +90,9 @@ JNIEXPORT jobjectArray JNICALL Java_org_apache_spark_ml_recommendation_CuMFJNIIn
 		int * d_csrColIndex = 0;
 		float * d_csrVal = 0;
 
-		cudacall(cudaMalloc((void** ) &d_csrRowIndex,(m + 1) * sizeof(float)));
-		cudacall(cudaMalloc((void** ) &d_csrColIndex, nnz * sizeof(float)));
-		cudacall(cudaMalloc((void** ) &d_csrVal, nnz * sizeof(float)));
+		cudacall(mallocBest((void** ) &d_csrRowIndex,(m + 1) * sizeof(float)));
+		cudacall(mallocBest((void** ) &d_csrColIndex, nnz * sizeof(float)));
+		cudacall(mallocBest((void** ) &d_csrVal, nnz * sizeof(float)));
 		cudacall(cudaMemcpyAsync(d_csrRowIndex, csrRowIndexHostPtr,(size_t ) ((m + 1) * sizeof(float)), cudaMemcpyHostToDevice, cuda_stream));
 		cudacall(cudaMemcpyAsync(d_csrColIndex, csrColIndexHostPtr,(size_t ) (nnz * sizeof(float)), cudaMemcpyHostToDevice, cuda_stream));
 		cudacall(cudaMemcpyAsync(d_csrVal, csrValHostPtr,(size_t ) (nnz * sizeof(float)),cudaMemcpyHostToDevice, cuda_stream));
@@ -121,7 +121,9 @@ JNIEXPORT jobjectArray JNICALL Java_org_apache_spark_ml_recommendation_CuMFJNIIn
 		//TODO: stream create and destroy expensive?
 		checkCudaErrors(cudaStreamSynchronize(cuda_stream));
 		checkCudaErrors(cudaStreamDestroy(cuda_stream));
+		#ifdef DEBUG 
 		cudaCheckError();
+		#endif
 		return output;
   }
   catch (thrust::system_error &e) {
