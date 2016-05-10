@@ -79,7 +79,7 @@ do\
 while(0)\
 
 #define cudaCheckError() {                                          \
-        cudaError_t e=cudaGetLastError();                                 \
+        cudaError_t e = cudaGetLastError();                                 \
         if(e!=cudaSuccess) {                                              \
             printf("CUDA failure %s:%d: '%s'\n",__FILE__,__LINE__,cudaGetErrorString(e));           \
             exit(EXIT_FAILURE);                                           \
