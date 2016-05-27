@@ -42,23 +42,26 @@ This approach has several advantages. First, existing Spark applications relying
 There are scripts to build the program locally, run in local mode, and run in distributed mode.  
 You should modify the first line or two to point to your own instalation of Java, Spark, Scala and data files.
 
-To build, first set $CUDA_ROOT to your cuda installation (e.g., /usr/local/cuda) and $JAVA_HOME to your JDK (not JRE, we need JDK to build the jni code).
+To build, first set $CUDA_HOME to your CUDA installation (e.g., /usr/local/cuda) and $JAVA_HOME to your JDK (not a JRE, we need the JDK to build the jni code).
 
 Then run:
-
-	build.sh
-
+	build.sh help to see the options you have available, for example
+	build.sh spark 2.5 -> only build Spark with profiles hardcoded here (Hadoop 2.5)
+        build.sh spark 2.6 dist -> build Spark and create the distribution package (Hadoop 2.6)
+        build.sh spark 2.7 dist tgz -> build Spark, create the distribution package, tarball and zip it (Hadoop 2.7)
 
 ## Run
 
-To run, first set $SPARK_HOME and $JAVA_HOME. 
+To run, first set your $SPARK_HOME and $JAVA_HOME and then execute runALS.sh.
 
-To submit to a local Spark installation:
-Run runLocal.sh, specifying the mode (gpu or cpu), #cores, the lambda, and the rank. Prepare a data file and put its name after "--kryo" in the runLocal.sh script.
+runALS.sh accepts several parameters, you'll want to specify the execution mode (with GPUs or CPUs only), the master URL (e.g. spark://foo.com:7077 or local[12]), the rank, how many iterations to run with, the lambda, and finally the data set to use.
 
-Note: rank value has to be a multiply of 10, e.g., 10, 50, 100, 200). For example:
+For example:
 
-	./runLocal.sh gpu 12 0.058 100
+	runLocal.sh gpu local[12] 100 12 0.058 $SPARK_HOME/netflix.data
+
+Note: rank value must be a multiple of 10.
+For picking a lambda, this is best achieved with trial and error; starting with something roughly 1 is useful, in our Netflix case we know the ideal lambda value is around 0.05.
 
 ## Known Issues
 We are trying to improve the usability, stability and performance. Here are some known issues:
