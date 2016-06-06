@@ -1,12 +1,14 @@
 #!/bin/bash
 
-# Runs the MovieLensALS application with netflix data, this script
-# allows us to easily modify GPU usage
+# Runs the MovieLensALS application using a given file, this script
+# allows us to easily control GPU usage
 
-# Check input arguments, we want five and cpu or gpu specified
-# the input format is the same as it is for the MovieLens example
-# except with the addition of the cpu/gpu parameter and the file name to use
-# arg 1 = execution method e.g. cpu or gpu
+# Note that you should change the spark-submit command if you're working with a prebuilt distribution of Spark
+# e.g. use $SPARK_HOME/examples/jars/spark-examples*.jar and $SPARK_HOME/examples/jars/scopt*.jar
+
+# The input format is the same as it is for the MovieLens example
+# except with the addition of the CPU/GPU parameter and the file name to use
+# arg 1 = execution method e.g. CPU or GPU
 # arg 2 = master e.g. local[*] or spark://foo.com:7077
 # arg 3 = rank e.g. 100
 # arg 4 = numIterations e.g. 10
@@ -22,11 +24,12 @@ fi
 gpu=""
 if [ "$1" = "gpu" ]; then
   gpu="--conf spark.mllib.ALS.useGPU=$SPARK_HOME/../CUDA-MLlib/als/libGPUALS.so"
-  echo "Using gpu library: $gpu"
+  echo "Using GPU library: $gpu"
 fi
 
 # For the netflix sample data we know ideal parameters are
 # rank 100, numIterations 10, lambda 0.058
+
 $SPARK_HOME/bin/spark-submit --class org.apache.spark.examples.mllib.MovieLensALS $gpu \
   --master $2 \
   --jars $SPARK_HOME/examples/target/scala-2.11/jars/spark-examples*.jar \
