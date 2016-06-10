@@ -63,12 +63,22 @@ For example:
 Note: rank value must be a multiple of 10.
 For picking a lambda, this is best achieved with trial and error; starting with something roughly 1 is useful, in our Netflix case we know the ideal lambda value is around 0.05.
 
+We look for the following system property:
+
+	spark.mllib.ALS.useGPU
+	
+and you can set this by adding the following to your spark-submit command line (assuming the shared library is at lib/ibm under your $SPARK_HOME folder, we allow you to choose any location):
+
+	--conf spark.mllib.ALS.useGPU=$SPARK_HOME/lib/ibm/libGPUALS.so
+
 ## Known Issues
 We are trying to improve the usability, stability and performance. Here are some known issues:
 
 (1) Out-of-memory error from GPUs, when there are many CPU threads accessing a small number of GPUs on any node. We tested Netflix data on one node, with 12 CPU cores used by the executor, and 2 Nvidia K40 GPU cards. If you have more GPU cards, you may be able to accomodate more CPU cores/threads. Otherwise you need to lessen the #cores assigned to Spark executor.
 
-(2) CPU-GPU hybrid execution. We want to push as much workload to GPU as possible. If GPUs cannot accomodate all CPU threads, we want to retain the execution on CPUs.
+(2) CPU-GPU hybrid execution. We want to push as much workload to GPU as possible. If GPUs cannot accomodate all CPU threads, we want to retain the execution on CPUs. 
+
+(3) Currently the user is responsible for partitioning the data correctly (try not to give the GPU too much or too little work, there's usually a sweet spot for GPU offloading) and handling any errors.
 
 ## References
 
